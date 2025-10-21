@@ -59,7 +59,7 @@ def randomized_gossip(x0, steps, seed):
     for step in range(steps):
         random_edge = np.random.random_integers(0, x0.shape[0]-1)
         gossip_steps[step+1, ] = gossip_steps[step, ].copy()
-        avg = (gossip_steps[step, (random_edge + 1) % x0.shape[0]] + gossip_steps[step, (random_edge - 1) % x0.shape[0]]) / 2
+        avg = (gossip_steps[step, (random_edge + 1) % x0.shape[0]] + gossip_steps[step, random_edge % x0.shape[0]]) / 2
         gossip_steps[step+1, (random_edge + 1) % x0.shape[0]] = avg
         gossip_steps[step+1, (random_edge) % x0.shape[0]] = avg
     return gossip_steps
@@ -123,7 +123,6 @@ def parallel_sgd(X, y, theta0, T, eta, K, batch_size, seed):
       'theta_hist' : (T+1, d) parameter trajectory
     """
     np.random.seed(seed)
-    rng = np.random.default_rng(seed)
     N, d = X.shape
 
     # Split the data into K shards 
@@ -142,7 +141,7 @@ def parallel_sgd(X, y, theta0, T, eta, K, batch_size, seed):
         grads = []
         for k in range(K):
             inds = shard_idx[k]
-            x_sample = rng.integers(len(inds), size=batch_size)
+            x_sample = np.random.randint(0, len(inds), size=batch_size)
 
             x_b = shard_X[k][x_sample]
             y_b = shard_y[k][x_sample]
@@ -189,7 +188,6 @@ def local_sgd(X, y, theta0, T, eta, K, batch_size, seed, tau):
       theta_hist : (T+1, d) parameter trajectory (after each averaging)
     """
     np.random.seed(seed)
-    rng = np.random.default_rng(seed)
     N, d = X.shape
 
     # Split the data into K shards 
@@ -206,10 +204,10 @@ def local_sgd(X, y, theta0, T, eta, K, batch_size, seed, tau):
 
     for t in range(1, T + 1):
         thetas = [theta.copy() for _ in range(K)]
-        for update in range(tau):
-            for k in range(K):
+        for k in range(K):
+            for update in range(tau):
                 inds = shard_idx[k]
-                sample_inds = rng.integers(len(inds), size=batch_size)
+                sample_inds = np.random.randint(0, len(inds), size=batch_size)
 
                 x_b = shard_X[k][sample_inds]
                 y_b = shard_y[k][sample_inds]
